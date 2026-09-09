@@ -80,23 +80,47 @@
     .hero{
       overflow:hidden;
       position:relative;
+      isolation:isolate;
       min-height:650px;
-      display:flex;align-items:center;
-      padding:96px 0 96px;
-      background:
-        radial-gradient(circle at 78% 25%,rgba(25,136,255,.17),transparent 31%),
-        radial-gradient(circle at 20% 65%,rgba(128,54,255,.11),transparent 29%),
-        linear-gradient(180deg,#0a0b0d 0%,#070707 100%);
+      display:flex;
+      align-items:center;
+      padding:96px 0 80px;
+      background:#09090a;
       border-bottom:1px solid #17181c;
     }
     .hero::before{
       content:"";
-      position:absolute;inset:0;
-      background-image:
-        linear-gradient(rgba(255,255,255,.027) 1px,transparent 1px),
-        linear-gradient(90deg,rgba(255,255,255,.027) 1px,transparent 1px);
-      background-size:72px 72px;
-      mask-image:linear-gradient(to bottom,black,transparent 82%);
+      position:absolute;
+      inset:0;
+      z-index:-2;
+      background-image:var(--hero-bg-image);
+      background-position:var(--hero-bg-position, center);
+      background-size:cover;
+      background-repeat:no-repeat;
+      opacity:.80;
+      filter:saturate(.96) brightness(.84);
+      transform:scale(1.015);
+      pointer-events:none;
+    }
+    .hero::after{
+      content:"";
+      position:absolute;
+      inset:0;
+      z-index:-1;
+      background:
+        radial-gradient(circle at 50% 28%,rgba(10,10,12,.40) 0%,rgba(10,10,12,.18) 34%,transparent 62%),
+        linear-gradient(90deg,
+          rgba(7,7,7,.10) 0%,
+          rgba(7,7,7,.18) 27%,
+          rgba(7,7,7,.48) 50%,
+          rgba(7,7,7,.18) 73%,
+          rgba(7,7,7,.10) 100%
+        ),
+        linear-gradient(180deg,
+          rgba(7,7,7,.06) 0%,
+          rgba(7,7,7,.08) 64%,
+          rgba(7,7,7,.72) 100%
+        );
       pointer-events:none;
     }
     .hero-inner{position:relative;z-index:1;text-align:center;max-width:970px;margin:0 auto}
@@ -583,6 +607,18 @@
       .reseller-box{align-items:flex-start;flex-direction:column}
     }
     @media (max-width:720px){
+
+      .hero::before{
+        opacity:.68;
+        filter:saturate(.92) brightness(.78);
+        transform:scale(1.025);
+      }
+      .hero::after{
+        background:
+          radial-gradient(circle at 50% 28%,rgba(7,7,7,.38) 0%,rgba(7,7,7,.16) 38%,transparent 66%),
+          linear-gradient(180deg,rgba(7,7,7,.08) 0%,rgba(7,7,7,.14) 64%,rgba(7,7,7,.74) 100%);
+      }
+
       .eyebrow-logo{height:22px;max-width:116px}
       .eyebrow{min-height:38px;padding:6px 11px 6px 9px;gap:8px}
       .eyebrow-text{font-size:9.5px}
@@ -778,7 +814,7 @@
   </header>
 
   <main>
-    <section class="hero">
+    <section class="hero" style="--hero-bg-image:url('https://images.blackmagicdesign.com/images/invites/ultra-hd-sale/hero/hero-en-xl@2x.jpg?_v=1788848410');--hero-bg-position:center;">
       <div class="wrap">
         <div class="hero-inner">
           <div class="eyebrow" aria-label="Blackmagic Design Special Promotion">
@@ -1356,6 +1392,43 @@
         count.textContent = visible;
       });
     });
+
+    // 새로고침할 때마다 Hero 배경을 Ultra HD ↔ 6K Camera로 번갈아 표시
+    const hero = document.querySelector('.hero');
+    if (hero) {
+      const heroBackgrounds = [
+        {
+          image: 'https://images.blackmagicdesign.com/images/invites/ultra-hd-sale/hero/hero-en-xl@2x.jpg?_v=1788848410',
+          desktopPosition: 'center',
+          mobilePosition: '48% center'
+        },
+        {
+          image: 'https://images.blackmagicdesign.com/images/media/releases/2026/20260904_6k-camera-price-reduction/carousel/1-6k-camera-price-reduction@2x.jpg?_v=1788501766',
+          desktopPosition: 'center',
+          mobilePosition: '52% center'
+        }
+      ];
+
+      let index = 0;
+
+      try {
+        const previous = Number(localStorage.getItem('bmdPromoHeroIndex'));
+        index = Number.isFinite(previous) ? (previous + 1) % heroBackgrounds.length : 0;
+        localStorage.setItem('bmdPromoHeroIndex', String(index));
+      } catch (e) {
+        // 로컬 저장소 사용이 제한된 환경에서는 시간값으로 번갈아 표시
+        index = Math.floor(Date.now() / 1000) % heroBackgrounds.length;
+      }
+
+      const selected = heroBackgrounds[index];
+      const isMobile = window.matchMedia('(max-width: 720px)').matches;
+
+      hero.style.setProperty('--hero-bg-image', `url("${selected.image}")`);
+      hero.style.setProperty(
+        '--hero-bg-position',
+        isMobile ? selected.mobilePosition : selected.desktopPosition
+      );
+    }
 
     // 제품 카드가 화면에 들어올 때 아래에서 위로 자연스럽게 등장
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
